@@ -1,0 +1,137 @@
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>  
+    <style>
+        #suggestions {
+          border: 1px solid #ccc;
+          max-width: 300px;
+          margin-top: 5px;
+        }
+        #suggestions div {
+          padding: 8px;
+          cursor: pointer;
+        }
+        #suggestions div:hover {
+          background-color: #f0f0f0;
+        }
+      </style>      
+</head>
+<body>
+    <h3>Simple Express DB App</h3>
+    <div>        
+        <a href="/enterNew">Add New Student</a>
+        <span id="status"></span>
+    </div>
+    <div>  
+    <input type="text" id="searchInput" placeholder="Start typing..." />
+    <button id="search">Search</button> 
+    <div id="suggestions"></div>
+    </div>
+
+    <table id="stu-table" border="1" style="width:50%; margin-top: 20px;">
+        <thead>
+          <tr><th></th><th>Name</th><th>Address</th><th>City</th><th>Pin</th></tr>
+        </thead>
+        <tbody id="stu-table-body">
+          <!-- Table content will be inserted here -->
+        </tbody>
+      </table>
+    <script>
+        // Function to fetch data from the Express route
+        function fetchData() {
+            fetch('/list')
+                .then(response => response.json())
+                .then(data => {
+                    // Update the content of the page with the fetched data
+                    console.log(data);
+                    const tableBody = document.getElementById('stu-table-body');
+                    tableBody.innerHTML = ''; // Clear previous content
+                    data.forEach(stu => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `<td><button onclick="deleteStudent(${stu.id})">Delete</button>`
+                            + `<button id = 'update_${stu.id}' onclick='updateRow(${stu.id})'>Update</button>`
+                            + `</td>` 
+                            + `<td>${stu.name}</td><td>${stu.addr}</td><td><input type='text' value='${stu.city}' id='city_${stu.id}'></td><td>${stu.pin}</td>`;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                });
+        }
+        function deleteStudent(id) {
+            fetch('/delete', {
+                method: 'POST',
+                headers: {
+                'Content-Type': 'application/json' // Tell server we're sending JSON
+                },
+                body: JSON.stringify({ id }) // Send the ID in the body
+            })
+            .then(response => {
+                if (response.ok) {
+                console.log('Student deleted successfully');
+                // Optionally reload or redirect
+                window.location.href = '/';
+                } else {
+                console.error('Failed to delete student');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        function updateRow(id) {
+            var city = document.getElementById('city_' + id).value;
+            var status = document.getElementById('status');
+            const data = { id, city };    
+            console.log(data);        
+            fetch('/update', {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
+            // .then(response => response.json())
+            .then(data => {
+                status.innerHTML = "Updated successfully";
+            })
+            .catch(error => {
+                console.error('Error in update:', error);
+            });
+        }
+        const searchInput = document.getElementById('searchInput');
+        const suggestionsBox = document.getElementById('suggestions');
+
+        searchInput.addEventListener('input', () => {
+        const query = searchInput.value;
+
+        // Only make a request if the query is not empty
+        if (query.trim() !== "") {
+            fetch(`/autocomplete?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                // Clear previous suggestions
+                suggestionsBox.innerHTML = '';
+
+                // Populate suggestions
+                data.forEach(item => {
+                const suggestionItem = document.createElement('div');
+                suggestionItem.textContent = item.name;
+                suggestionItem.addEventListener('click', () => {
+                    searchInput.value = item.name; // Set input value to selected suggestion
+                    suggestionsBox.innerHTML = ''; // Clear suggestions
+                });
+                suggestionsBox.appendChild(suggestionItem);
+                });
+            })
+            .catch(err => console.error('Error fetching suggestions:', err));
+        } else {
+            suggestionsBox.innerHTML = ''; // Clear suggestions if input is empty
+        }
+        });        
+        // Call the fetchData function when the page loads
+        window.onload = fetchData;
+    </script>    
+</body>
+</html>
