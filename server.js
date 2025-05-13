@@ -43,7 +43,7 @@ app.get("/enterNew", (req,res) => {
 })
 
 
-app.get("/list", (req, res) => {
+app.get("/students", (req, res) => {
     const sql = "SELECT * FROM students"; 
     db.all(sql, [], (err, rows) => {
         if (err) {
@@ -56,7 +56,7 @@ app.get("/list", (req, res) => {
     });
   })
 
-app.post('/insert', (req, res) => {
+app.post('/students', (req, res) => {
     console.log(req.body);
     const { fullname, address, city, pin } = req.body;
 
@@ -81,9 +81,9 @@ app.post('/insert', (req, res) => {
     });
 });
 
-app.post("/delete", (req, res) => {
+app.delete("/students/:id", (req, res) => {
     try {
-      const { id } = req.body; // Read id from POST body instead of URL params
+      const { id } = req.params; // Read id from POST body instead of URL params
   
       const update = db.run(
         `DELETE FROM students WHERE id = ?`,
@@ -99,21 +99,22 @@ app.post("/delete", (req, res) => {
     }
   });
   
-app.post('/updateCity', (req, res) => {
-    console.log(req.body);
-    const { id, city } = req.body; // Assuming you're passing JSON data for updating
-    try {
-        const result = db.run(
-        'UPDATE students SET city = $1 WHERE id = $2 RETURNING *',
-        [city, id]
-        );
+app.put('/students/:id/city', async (req, res) => {
+  const { city } = req.body;
+  const { id } = req.params;
 
-        res.json({ success: true});  
-    } catch (error) {
-        console.error('Error executing query', error);
-        res.status(500).json({ success: false, error: 'Error updating row' });
-    }
-    });  
+  try {
+    const result = await db.run(
+      'UPDATE students SET city = $1 WHERE id = $2 RETURNING *',
+      [city, id]
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error executing query', error);
+    res.status(500).json({ success: false, error: 'Error updating row' });
+  }
+}); 
 
 app.get('/autocomplete', (req, res) => {
     const query = req.query.q?.toLowerCase() || ""; // Get query parameter

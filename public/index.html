@@ -25,7 +25,7 @@
     <div>  
     <input type="text" id="searchInput" placeholder="Start typing..." />
     <button id="search">Search</button> 
-    <div id="suggestions"></div>
+    <div id="suggestions" style="position: absolute; background: white; z-index: 1000; border: 1px solid #ccc; max-width: 300px; display: none;"></div>
     </div>
 
     <table id="stu-table" border="1" style="width:50%; margin-top: 20px;">
@@ -39,7 +39,7 @@
     <script>
         // Function to fetch data from the Express route
         function fetchData() {
-            fetch('/list')
+            fetch('/students')
                 .then(response => response.json())
                 .then(data => {
                     // Update the content of the page with the fetched data
@@ -60,8 +60,8 @@
                 });
         }
         function deleteStudent(id) {
-            fetch('/delete', {
-                method: 'POST',
+            fetch(`/delete/${id}`, {
+                method: 'DELETE',
                 headers: {
                 'Content-Type': 'application/json' // Tell server we're sending JSON
                 },
@@ -85,13 +85,13 @@
             var status = document.getElementById('status');
             const data = { id, city };    
             console.log(data);        
-            fetch('/update', {
-                method: 'POST',
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(data)
-            })
+            fetch(`/students/${id}/city`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ city: city }) // or just { city } if it's defined separately
+            });
             // .then(response => response.json())
             .then(data => {
                 status.innerHTML = "Updated successfully";
